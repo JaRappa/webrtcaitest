@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DrVibe - Browser Diagnostic</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .test-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border-left: 4px solid #ccc;
+        }
+        .test-item.pass {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        .test-item.fail {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        .test-item.warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+        button {
+            padding: 12px 24px;
+            margin: 10px 5px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #667eea;
+            color: white;
+        }
+        button:hover {
+            background: #5a6fd8;
+        }
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DrVibe Browser Diagnostic</h1>
+        <p>This page will help diagnose browser compatibility issues with DrVibe.</p>
+        
+        <button onclick="runDiagnostics()">Run Full Diagnostic</button>
+        <button onclick="testMicrophone()">Test Microphone</button>
+        <button onclick="testSpeechRecognition()">Test Speech Recognition</button>
+        <button onclick="testSpeechSynthesis()">Test Text-to-Speech</button>
+        
+        <div id="results"></div>
+        
+        <div style="margin-top: 30px;">
+            <h3>Recommended Browsers:</h3>
+            <ul>
+                <li><strong>Chrome</strong> - Best support for all features</li>
+                <li><strong>Edge</strong> - Good support for all features</li>
+                <li><strong>Safari</strong> - Good support (macOS)</li>
+                <li><strong>Firefox</strong> - Limited speech recognition support</li>
+            </ul>
+            
+            <h3>Common Issues:</h3>
+            <ul>
+                <li>Microphone permission denied - Click Allow when prompted</li>
+                <li>Network error - Try Chrome or Edge browser</li>
+                <li>HTTPS required - Use localhost or https://</li>
+                <li>No speech detected - Check microphone and try speaking louder</li>
+            </ul>
+            
+            <p><a href="/" style="color: #667eea;">← Back to DrVibe</a></p>
+        </div>
+    </div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-item ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function runDiagnostics() {
+            clearResults();
+            addResult('<h3>Running Browser Diagnostic...</h3>');
+            
+            // Browser info
+            addResult(`<strong>Browser:</strong> ${navigator.userAgent}`, 'info');
+            addResult(`<strong>Protocol:</strong> ${location.protocol}`, location.protocol === 'https:' || location.hostname === 'localhost' ? 'pass' : 'warning');
+            
+            // Check APIs
+            const hasWebRTC = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+            const hasSpeechRecognition = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+            const hasSpeechSynthesis = !!window.speechSynthesis;
+            
+            addResult(`<strong>Microphone API:</strong> ${hasWebRTC ? 'Supported' : 'Not Supported'}`, hasWebRTC ? 'pass' : 'fail');
+            addResult(`<strong>Speech Recognition:</strong> ${hasSpeechRecognition ? 'Supported' : 'Not Supported'}`, hasSpeechRecognition ? 'pass' : 'fail');
+            addResult(`<strong>Text-to-Speech:</strong> ${hasSpeechSynthesis ? 'Supported' : 'Not Supported'}`, hasSpeechSynthesis ? 'pass' : 'fail');
+            
+            // Test microphone permission
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                addResult('<strong>Microphone Permission:</strong> Granted', 'pass');
+                stream.getTracks().forEach(track => track.stop());
+            } catch (error) {
+                addResult(`<strong>Microphone Permission:</strong> Denied or Error - ${error.message}`, 'fail');
+            }
+            
+            // Test voices
+            if (hasSpeechSynthesis) {
+                const voices = speechSynthesis.getVoices();
+                addResult(`<strong>Available Voices:</strong> ${voices.length} voices found`, voices.length > 0 ? 'pass' : 'warning');
+            }
+        }
+
+        async function testMicrophone() {
+            clearResults();
+            try {
+                addResult('Requesting microphone access...', 'info');
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                addResult('✅ Microphone access granted!', 'pass');
+                
+                // Show audio levels for 5 seconds
+                const audioContext = new AudioContext();
+                const analyser = audioContext.createAnalyser();
+                const microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                analyser.fftSize = 256;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                
+                let maxLevel = 0;
+                const startTime = Date.now();
+                
+                const checkAudio = () => {
+                    analyser.getByteFrequencyData(dataArray);
+                    const average = dataArray.reduce((a, b) => a + b) / bufferLength;
+                    maxLevel = Math.max(maxLevel, average);
+                    
+                    if (Date.now() - startTime < 3000) {
+                        requestAnimationFrame(checkAudio);
+                    } else {
+                        addResult(`Audio Level Test Complete. Max level: ${Math.round(maxLevel)}`, maxLevel > 10 ? 'pass' : 'warning');
+                        if (maxLevel < 10) {
+                            addResult('Low audio level detected. Try speaking louder or check microphone.', 'warning');
+                        }
+                        stream.getTracks().forEach(track => track.stop());
+                        audioContext.close();
+                    }
+                };
+                
+                addResult('Monitoring audio levels for 3 seconds... Please speak now!', 'info');
+                checkAudio();
+                
+            } catch (error) {
+                addResult(`❌ Microphone test failed: ${error.message}`, 'fail');
+            }
+        }
+
+        function testSpeechRecognition() {
+            clearResults();
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                addResult('❌ Speech Recognition not supported in this browser', 'fail');
+                return;
+            }
+            
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            
+            addResult('Starting speech recognition test... Please say something!', 'info');
+            
+            recognition.onstart = () => {
+                addResult('✅ Speech recognition started successfully', 'pass');
+            };
+            
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                if (transcript.trim()) {
+                    addResult(`✅ Speech recognized: "${transcript}"`, 'pass');
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                addResult(`❌ Speech recognition error: ${event.error}`, 'fail');
+                if (event.error === 'network') {
+                    addResult('Network error suggests browser compatibility issues. Try Chrome or Edge.', 'warning');
+                }
+            };
+            
+            recognition.onend = () => {
+                addResult('Speech recognition test ended', 'info');
+            };
+            
+            try {
+                recognition.start();
+            } catch (error) {
+                addResult(`❌ Failed to start speech recognition: ${error.message}`, 'fail');
+            }
+        }
+
+        function testSpeechSynthesis() {
+            clearResults();
+            
+            if (!window.speechSynthesis) {
+                addResult('❌ Text-to-Speech not supported', 'fail');
+                return;
+            }
+            
+            const utterance = new SpeechSynthesisUtterance('Hello! This is a text-to-speech test for DrVibe.');
+            
+            utterance.onstart = () => {
+                addResult('✅ Text-to-Speech started successfully', 'pass');
+            };
+            
+            utterance.onend = () => {
+                addResult('✅ Text-to-Speech completed successfully', 'pass');
+            };
+            
+            utterance.onerror = (event) => {
+                addResult(`❌ Text-to-Speech error: ${event.error}`, 'fail');
+            };
+            
+            addResult('Starting text-to-speech test...', 'info');
+            speechSynthesis.speak(utterance);
+        }
+
+        // Auto-run basic checks on load
+        window.addEventListener('load', () => {
+            setTimeout(runDiagnostics, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DrVibe - Real-time AI Conversation</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>DrVibe</h1>
+            <p>Real-time AI Conversation</p>
+        </header>
+
+        <main>
+            <div class="chat-container">
+                <div class="messages" id="messages"></div>
+                
+                <div class="status-panel">
+                    <div class="mic-status" id="micStatus">
+                        <span class="status-indicator" id="statusIndicator"></span>
+                        <span id="statusText">Click to start</span>
+                    </div>
+                    
+                    <div class="transcript-area">
+                        <div class="current-transcript" id="currentTranscript">
+                            Speak naturally - your voice will be converted to text automatically
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button id="startBtn" class="control-btn primary">
+                        <span class="mic-icon">🎤</span>
+                        Start Conversation
+                    </button>
+                    <button id="stopBtn" class="control-btn secondary" disabled>
+                        <span class="stop-icon">⏹️</span>
+                        Stop
+                    </button>
+                    <button id="resetBtn" class="control-btn">
+                        <span class="reset-icon">🔄</span>
+                        Reset
+                    </button>
+                </div>
+
+                <div class="audio-controls">
+                    <label for="voiceSelect">AI Voice:</label>
+                    <select id="voiceSelect">
+                        <option value="">Select Voice</option>
+                    </select>
+                    
+                    <label for="volumeControl">Volume:</label>
+                    <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="0.8">
+                    
+                    <label for="rateControl">Speed:</label>
+                    <input type="range" id="rateControl" min="0.5" max="2" step="0.1" value="1">
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Powered by Amazon Bedrock & Web Speech API</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
