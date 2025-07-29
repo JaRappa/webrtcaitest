@@ -1,0 +1,36 @@
+{
+  "name": "drvibe-realtime-ai",
+  "version": "1.0.0",
+  "description": "Real-time conversational AI with Amazon Bedrock",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "aws-sdk": "^2.1454.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.423.0",
+    "multer": "^1.4.5-lts.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "node-record-lpcm16": "^1.0.1",
+    "speech-to-text": "^2.0.0",
+    "@google-cloud/speech": "^6.0.0",
+    "fluent-ffmpeg": "^2.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "ai",
+    "bedrock",
+    "speech-to-text",
+    "text-to-speech",
+    "webrtc",
+    "real-time"
+  ],
+  "author": "Jake",
+  "license": "MIT"
+}
